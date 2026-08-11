@@ -25,18 +25,18 @@ After routing, there is one execution path. The Executor consumes a Canonical Ex
 
 ## CLI Environment
 
-The `cybersierra` CLI is distributed as an npm package: `@cybersierra/cybersierra`.
+The `cybersierra` CLI is distributed as an npm package: `@cybersierra-cli/cybersierra`.
 
 **Before running any `cybersierra` command**, check if it is installed:
 
 ```bash
-which cybersierra || npm list -g @cybersierra/cybersierra
+which cybersierra || npm list -g @cybersierra-cli/cybersierra
 ```
 
 If the command is not found or the package is not installed, install it globally:
 
 ```bash
-npm install -g @cybersierra/cybersierra
+npm install -g @cybersierra-cli/cybersierra
 ```
 
 After installation, `cybersierra` will be available on PATH. This check must happen at the start of every session before any `cybersierra` invocation.
@@ -171,7 +171,7 @@ The Executor is deterministic runtime logic. It:
 
 1. Ensures the `cybersierra` CLI is available:
    ```bash
-   which cybersierra || npm install -g @cybersierra/cybersierra
+   which cybersierra || npm install -g @cybersierra-cli/cybersierra
    ```
    If installation fails, halt and report the error to the user.
 
