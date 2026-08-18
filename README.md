@@ -38,7 +38,7 @@ skills/
 The `cybersierra` CLI is published as an npm package and installed automatically when the skill runs:
 
 ```bash
-npm install -g @cybersierra/cybersierra
+npm install -g @cybersierra/cybersierra-cli
 ```
 
 The skill checks for `cybersierra` availability before every session and installs it if missing. No manual binary placement is required.
@@ -69,7 +69,7 @@ The skill checks for `cybersierra` availability before every session and install
 4. **(Optional) Pre-install the Cyber Sierra CLI:**
 
    ```bash
-   npm install -g @cybersierra/cybersierra
+   npm install -g @cybersierra/cybersierra-cli
    ```
 
    If you skip this step, the plugin will install it automatically on first use.
@@ -100,7 +100,7 @@ The plugin implements a multi-stage pipeline:
 This plugin is designed for eventual publication through the Claude Code plugin marketplace. The `.claude-plugin/marketplace.json` file contains the required metadata. Before publishing:
 
 1. Populate `icon`, `changelog`, and `minClaudeCodeVersion` fields in `marketplace.json`
-2. Ensure `@cybersierra/cybersierra` is published and accessible on npm
+2. Ensure `@cybersierra/cybersierra-cli` is published and accessible on npm
 3. Follow the Claude Code plugin publishing guide (when available)
 
 ## License
