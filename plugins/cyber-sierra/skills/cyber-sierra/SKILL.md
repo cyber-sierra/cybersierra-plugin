@@ -8,7 +8,7 @@ description: >-
   run audit, generate report, login to Cyber Sierra, sign in to Cyber
   Sierra, authenticate with Cyber Sierra, Cyber Sierra login, connect
   to Cyber Sierra, or any multi-step compliance task.
-allowed-tools: "Bash(cybersierra *) Bash(*/cybersierra *) Bash(npx cybersierra *) Bash(npm *) Bash(python3 *) Shell(cybersierra *) Shell(*/cybersierra *) Shell(npx cybersierra *) Shell(npm *) Shell(python3 *) Read Write"
+allowed-tools: "Bash(cybersierra *) Bash(npm install -g @cybersierra/cybersierra-cli@latest) Bash(npm uninstall -g @cybersierra-cli/cybersierra) Shell(cybersierra *) Shell(npm install -g @cybersierra/cybersierra-cli@latest) Shell(npm uninstall -g @cybersierra-cli/cybersierra) Read Grep Write"
 ---
 
 # Cyber Sierra — Router & Orchestrator
@@ -36,7 +36,7 @@ cybersierra --version
 If the command is not found, or it prints a version older than `1.1.0`, install the latest release. The deprecated package `@cybersierra-cli/cybersierra` (versions `0.x`) provides the same `cybersierra` binary, so remove it first:
 
 ```bash
-npm uninstall -g @cybersierra-cli/cybersierra 2>/dev/null; npm install -g @cybersierra/cybersierra-cli@latest
+npm uninstall -g @cybersierra-cli/cybersierra; npm install -g @cybersierra/cybersierra-cli@latest
 ```
 
 After installation, `cybersierra` will be available on PATH. This check must happen at the start of every session before any `cybersierra` invocation.
@@ -109,13 +109,14 @@ If no match exceeds 0.8:
 
 **Module Inference:**
 
-Identify which CLI modules are relevant to this request. Query the manifest module list:
+Identify which CLI modules are relevant to this request. The module list comes from the manifest file that sign-in downloads, so if `cybersierra auth whoami` fails, run the Authentication Protocol (step 5) first.
 
-```bash
-cybersierra manifest --raw | python3 -c "import json,sys; print(json.dumps(list(json.load(sys.stdin)['tree'].keys())))"
-```
+List the modules with the Grep tool (read-only; see `_internal/shared/manifest-usage.md`):
 
-From the available modules, select only those relevant to the request. Set `state.modules`.
+- File: `.cybersierra/agent-api.json` in the user's home folder
+- Pattern: `^    "[a-z0-9-]+": \[` with line numbers
+
+Each match is one module name and the line where its operations start. From the available modules, select only those relevant to the request. Set `state.modules`.
 
 Set `state.status = "ROUTED"`.
 
@@ -134,22 +135,9 @@ If the skill references commands missing from the manifest, set `error` ("Skill 
 
 **If `matchedSkill` is null — Planner:**
 
-Fetch manifests for the identified modules:
+Load the operations for each identified module with the Read tool: read the manifest file from that module's line up to the line before the next module (line numbers from the Grep in step 2).
 
-```bash
-cybersierra manifest --raw | python3 -c "
-import json, sys
-tree = json.load(sys.stdin)['tree']
-modules = ['MODULE_1', 'MODULE_2']
-out = {}
-for m in modules:
-    if m in tree:
-        out[m] = tree[m]
-print(json.dumps(out, indent=2))
-"
-```
-
-Read `_internal/planner/SKILL.md`. Follow its instructions to generate the plan. The Planner will load its own references (`references/planning-rules.md`, `references/execution-plan-schema.md`) as needed.
+Read `_internal/planner/PLANNER.md`. Follow its instructions to generate the plan. The Planner will load its own references (`references/planning-rules.md`, `references/execution-plan-schema.md`) as needed.
 
 After planning: `state.status = "PLANNED"`.
 
@@ -216,7 +204,7 @@ After execution, if the request requires analysis or summarization, YOU (the age
 
 ### 6. Reflect & Learn
 
-Read `_internal/reflection/SKILL.md`. Follow its instructions.
+Read `_internal/reflection/REFLECTION.md`. Follow its instructions.
 
 Reflection evaluates the execution and decides `shouldPersist`. If persisting, it generates a skill and updates `_generated/index.json`. It sets `state.status = "COMPLETE"`.
 
@@ -259,8 +247,8 @@ Token budget matters. Load references only when needed:
 | Always                     | This file, `_internal/shared/workflow-state.md`   |
 | Routing                    | `_generated/index.json`                           |
 | Skill matched              | `_generated/<name>/SKILL.md` (one file only)      |
-| Planning needed            | `_internal/planner/SKILL.md` (loads its own refs) |
-| After execution            | `_internal/reflection/SKILL.md` (loads its own refs) |
+| Planning needed            | `_internal/planner/PLANNER.md` (loads its own refs) |
+| After execution            | `_internal/reflection/REFLECTION.md` (loads its own refs) |
 | Manifest queries           | `_internal/shared/manifest-usage.md`              |
 | Debugging only             | `_internal/shared/contracts.md`                   |
 
