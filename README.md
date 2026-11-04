@@ -41,7 +41,9 @@ The `cybersierra` CLI is published as an npm package and installed automatically
 npm install -g @cybersierra/cybersierra-cli
 ```
 
-The skill checks for `cybersierra` availability before every session and installs it if missing. No manual binary placement is required.
+The skill checks for `cybersierra` 1.1.0 or newer before every session and installs the latest release if it is missing or older. No manual binary placement is required.
+
+Sign-in uses `cybersierra auth login-browser`: your browser opens, you click **Authorize**, and the browser returns to the CLI at a local `127.0.0.1` address. The CLI and the browser must be on the same computer, so sign-in works in Claude Code (terminal or the desktop app's Code tab, local session) and Cursor, but not in Claude Cowork, Claude chat, cloud sessions, or over SSH.
 
 ## Local Installation
 

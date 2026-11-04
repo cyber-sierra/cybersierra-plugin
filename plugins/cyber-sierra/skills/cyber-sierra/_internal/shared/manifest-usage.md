@@ -6,13 +6,19 @@ The CLI manifest is the single source of truth for available commands. No compon
 
 The `cybersierra` CLI is distributed as the npm package `@cybersierra/cybersierra-cli`.
 
-Before running any `cybersierra` command, verify it is installed:
+Before running any `cybersierra` command, verify that version 1.1.0 or newer is installed:
 
 ```bash
-which cybersierra || npm install -g @cybersierra/cybersierra-cli
+cybersierra --version
 ```
 
-If `cybersierra` is not found, install it globally before proceeding. After installation it will be available on PATH.
+If it is not found or older than `1.1.0`, install the latest release before proceeding (this also removes the deprecated package, which provides the same binary):
+
+```bash
+npm uninstall -g @cybersierra-cli/cybersierra 2>/dev/null; npm install -g @cybersierra/cybersierra-cli@latest
+```
+
+After installation it will be available on PATH.
 
 ## Querying the Manifest
 

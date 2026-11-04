@@ -25,18 +25,18 @@ After routing, there is one execution path. The Executor consumes a Canonical Ex
 
 ## CLI Environment
 
-The `cybersierra` CLI is distributed as an npm package: `@cybersierra/cybersierra-cli`.
+The `cybersierra` CLI is distributed as an npm package: `@cybersierra/cybersierra-cli`. Version **1.1.0 or newer** is required: older versions use a sign-in method the server no longer accepts.
 
-**Before running any `cybersierra` command**, check if it is installed:
+**Before running any `cybersierra` command**, check the installed version:
 
 ```bash
-which cybersierra || npm list -g @cybersierra/cybersierra-cli
+cybersierra --version
 ```
 
-If the command is not found or the package is not installed, install it globally:
+If the command is not found, or it prints a version older than `1.1.0`, install the latest release. The deprecated package `@cybersierra-cli/cybersierra` (versions `0.x`) provides the same `cybersierra` binary, so remove it first:
 
 ```bash
-npm install -g @cybersierra/cybersierra-cli
+npm uninstall -g @cybersierra-cli/cybersierra 2>/dev/null; npm install -g @cybersierra/cybersierra-cli@latest
 ```
 
 After installation, `cybersierra` will be available on PATH. This check must happen at the start of every session before any `cybersierra` invocation.
@@ -169,10 +169,7 @@ If the user declines, halt.
 
 The Executor is deterministic runtime logic. It:
 
-1. Ensures the `cybersierra` CLI is available:
-   ```bash
-   which cybersierra || npm install -g @cybersierra/cybersierra-cli
-   ```
+1. Ensures `cybersierra` 1.1.0 or newer is installed (see CLI Environment above).
    If installation fails, halt and report the error to the user.
 
 2. Runs `cybersierra auth whoami` — if exit code is non-zero (authentication required):
@@ -181,48 +178,31 @@ The Executor is deterministic runtime logic. It:
 
    Authentication is a required checkpoint. Do **not** continue execution until authentication has completed successfully.
 
-   **Primary flow — `login-browser`:**
+   **How sign-in works:** `login-browser` opens the user's browser, the user signs in (MFA and SSO supported) and clicks **Authorize**, and the browser hands the result back to the CLI at a local `http://127.0.0.1:<port>/callback` address. There is no confirmation code and nothing to type. The browser and the CLI must therefore run on the **same computer**.
+
+   **Where it works:** Claude Code in a terminal, the Claude desktop app's Code tab with a local session, and Cursor. **Where it does not:** Claude Cowork, Claude chat, Claude Code on the web or other cloud sessions, SSH or remote machines, and containers or VMs. There the CLI runs somewhere the user's browser cannot reach, and those environments may also block network access to Cyber Sierra. Do not start sign-in there. Tell the user that Cyber Sierra sign-in needs Claude Code or Cursor running on their own computer, and stop.
+
+   Never ask the user to paste a password, a token, or the `127.0.0.1` address from their browser into the chat.
+
+   **Sign in with `login-browser`:**
 
    1. Resolve the base URL from the Environment URLs table (default: `prod`).
-   2. Run the login command:
+   2. Before running anything, tell the user: "A browser window will open. Sign in to Cyber Sierra if asked, then click **Authorize**."
+   3. Run the login command:
       ```bash
       cybersierra auth login-browser --url <baseUrl>
       ```
-      The CLI opens the user's default browser and polls until the user completes login (supports MFA/SSO). The command blocks until authentication succeeds, the session expires, or the 5-minute local timeout fires.
-   3. From the command output, extract the **login URL** and **confirmation code**. Present them immediately to the user.
-   4. Display the following message clearly separated from other output:
+      The command waits up to 5 minutes for the user, but most agent shells stop a command after about 2 minutes, which ends the sign-in. Run it in the background (Claude Code: `run_in_background: true`; Cursor: a background terminal), or in the foreground with a timeout of at least 6 minutes (Claude Code: `timeout: 360000`).
+   4. If it is running in the background, read its output. The CLI prints the sign-in URL as soon as it starts. Show it to the user on its own line, in case the browser did not open:
 
-      **Cyber Sierra Login Required**
+      **Cyber Sierra sign-in**
 
-      Open this URL in your browser to authenticate:
-      `<loginUrl>`
+      A browser window should have opened. If it did not, open this link in a browser on this computer, then click **Authorize**:
+      `<signInUrl>`
 
-      **Confirmation Code: `<userCode>`**
-
-      Verify this code matches what the browser shows before confirming.
-
-   5. Do not summarize, rephrase, shorten, or embed this information inside other execution logs. The login URL and confirmation code must be clearly separated from all other output and easy for the user to locate.
-   6. Once the command exits with code 0, authentication succeeded — continue execution.
-   7. If the command exits with a non-zero code (timeout, process killed, network failure), inform the user that login did not complete and offer to resume (see recovery below).
-
-   **Recovery flow — `auth poll` (use only when needed):**
-
-   Use `cybersierra auth poll` when:
-   - The `login-browser` process was interrupted (tool timeout, process killed, harness restart)
-   - The user asks to "check auth status" or "resume login"
-   - A prior authentication attempt did not complete but the session may still be valid
-
-   Do NOT use `auth poll` as the default path. It is strictly a recovery mechanism.
-
-   ```bash
-   cybersierra auth poll
-   ```
-
-   Behavior:
-   - If the prior session has expired, exits with an error — start fresh with `login-browser`
-   - If still valid, re-prints the login URL and confirmation code, then resumes polling
-   - On success (exit 0): authentication complete, continue execution
-   - On failure: report the error and suggest the user run `login-browser` again for a fresh session
+   5. Wait for the command to exit. Exit code 0 with `Authenticated successfully!` means sign-in succeeded: continue execution.
+   6. A non-zero exit (timed out, the user clicked Cancel, the process was stopped) means sign-in did not complete. Tell the user and offer to run `login-browser` again. Every run starts a new sign-in; there is nothing to resume.
+   7. If the command fails before printing a sign-in URL (for example `HTTP 403` or a network error), the environment cannot reach Cyber Sierra. Report the error and do not retry in a loop.
 3. Collects any unresolved `{{inputs.*}}` values from the user
 4. Executes each step sequentially:
    - Resolves `{{inputs.*}}` and `{{step[N].*}}` references
