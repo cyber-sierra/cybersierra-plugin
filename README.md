@@ -16,12 +16,12 @@ skills/
             index.json               # Learned-skill discovery index
         _internal/
             planner/
-                SKILL.md             # Execution plan generator
+                PLANNER.md           # Execution plan generator
                 references/
                     execution-plan-schema.md
                     planning-rules.md
             reflection/
-                SKILL.md             # Post-execution reflection & learning
+                REFLECTION.md        # Post-execution reflection & learning
                 references/
                     learning-rules.md
                     reflection-schema.md

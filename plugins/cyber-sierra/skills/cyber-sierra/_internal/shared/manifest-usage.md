@@ -15,7 +15,7 @@ cybersierra --version
 If it is not found or older than `1.1.0`, install the latest release before proceeding (this also removes the deprecated package, which provides the same binary):
 
 ```bash
-npm uninstall -g @cybersierra-cli/cybersierra 2>/dev/null; npm install -g @cybersierra/cybersierra-cli@latest
+npm uninstall -g @cybersierra-cli/cybersierra; npm install -g @cybersierra/cybersierra-cli@latest
 ```
 
 After installation it will be available on PATH.
@@ -54,17 +54,12 @@ Returns:
 
 ### Filtering to specific modules
 
-Use `--raw` and filter client-side:
+The full manifest is too large to load whole. Sign-in saves it, pretty-printed, to `.cybersierra/agent-api.json` in the user's home folder, with each module's key indented four spaces inside `"tree"`. Slice it with the read-only Grep and Read tools rather than a script:
 
-```bash
-cybersierra manifest --raw | python3 -c "
-import json, sys
-tree = json.load(sys.stdin)['tree']
-for m in ['MODULE_1', 'MODULE_2']:
-    if m in tree:
-        print(json.dumps({m: tree[m]}, indent=2))
-"
-```
+1. **List modules:** Grep the file for `^    "[a-z0-9-]+": \[` with line numbers. Each match is a module name and its start line.
+2. **Load a module:** Read the file from that module's start line up to the line before the next module's start line (or to the end for the last one).
+
+If the file does not exist, the user has not signed in yet: run the Authentication Protocol first. Before sign-in, `cybersierra manifest` returns no modules.
 
 The Router determines which modules are relevant. The Planner receives only those modules.
 
@@ -112,4 +107,4 @@ cybersierra <module> <resource> <action> [flags]
 
 ## Module Discovery
 
-Do not hardcode module lists. Query `cybersierra manifest --raw` and inspect the `tree` keys to discover available modules dynamically.
+Do not hardcode module lists. List the `tree` keys from the manifest file (see Filtering to specific modules) to discover available modules dynamically.
